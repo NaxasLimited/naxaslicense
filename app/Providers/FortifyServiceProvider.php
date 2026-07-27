@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Fortify;
+use Illuminate\Support\Facades\Hash;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -26,6 +27,14 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Fortify::authenticateUsing(function (Request $request) {
+            $user = \App\Models\User::where('email', $request->string('email'))->first();
+            if ($user?->is_active && Hash::check((string) $request->string('password'), $user->password)) {
+                $user->forceFill(['last_login_at' => now()])->save();
+                return $user;
+            }
+            return null;
+        });
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();

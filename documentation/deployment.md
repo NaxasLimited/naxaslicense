@@ -1,0 +1,2 @@
+# Deployment
+Install locked Composer and npm dependencies, build assets, configure production environment and signing key, run additive migrations with `php artisan migrate --force`, seed the idempotent catalog, create the first admin interactively, cache configuration/routes, and expose only `public/`. Verify `/health` without publishing database/key diagnostics. Back up before deploy and never enable debug publicly.

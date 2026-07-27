@@ -1,0 +1,1 @@
+<!doctype html><html><body><main><h1>Buildora activation</h1>@isset($state)<p>Status: {{ucfirst($state)}}</p>@endisset<form method="POST">@csrf<label>Activation Request Token <input name="request_token" required></label><label>Production domain confirmation <input name="domain" required></label><button>Submit for review</button></form></main></body></html>
