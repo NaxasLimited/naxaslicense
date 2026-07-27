@@ -15,7 +15,11 @@ class AuthenticationTest extends TestCase
     {
         $response = $this->get(route('login'));
 
-        $response->assertOk();
+        $response
+            ->assertOk()
+            ->assertSee('Access is restricted to authorized Naxas administrators.')
+            ->assertDontSee('Sign up')
+            ->assertDontSee('/register', false);
     }
 
     public function test_users_can_authenticate_using_the_login_screen(): void
@@ -32,6 +36,26 @@ class AuthenticationTest extends TestCase
             ->assertRedirect(route('dashboard', absolute: false));
 
         $this->assertAuthenticated();
+    }
+
+    public function test_administrators_can_authenticate_using_the_login_screen(): void
+    {
+        $administrator = User::factory()->create([
+            'is_admin' => true,
+            'is_active' => true,
+        ]);
+
+        $response = $this->post(route('login.store'), [
+            'email' => $administrator->email,
+            'password' => 'password',
+        ]);
+
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('dashboard', absolute: false));
+
+        $this->assertAuthenticatedAs($administrator);
+        $this->assertNotNull($administrator->refresh()->last_login_at);
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void
