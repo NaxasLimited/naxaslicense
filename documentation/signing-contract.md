@@ -1,0 +1,2 @@
+# Signing contract
+Tokens are `base64url(payload UTF-8 bytes).base64url(RSA SHA-256 signature)` with no padding. Object keys are recursively sorted bytewise; list order is preserved; Unicode and slashes are unescaped. Claims are schema version 1, public license/product/type, issuer/customer, domain/allowed development hosts, installation UUID, dates and entitlement booleans/map. `RS256` describes the algorithm; no JWT header is added because Buildora uses this detached two-part contract.

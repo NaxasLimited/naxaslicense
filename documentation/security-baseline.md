@@ -1,0 +1,2 @@
+# Security baseline
+Production must use `APP_ENV=production`, `APP_DEBUG=false`, HTTPS, a protected application key, secure cookies, trusted proxies/hosts, least-privilege database credentials, external signing key permissions, backups and monitored logs. Registration is disabled; inactive or non-admin users cannot enter admin routes. APIs validate exact fields and payload size, hash proofs/nonces, use constant-time proof comparison and named throttles. CSRF remains enabled for all web/admin forms.

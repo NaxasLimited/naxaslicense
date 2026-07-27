@@ -1,11 +1,5 @@
 <?php
-
-use Illuminate\Support\Facades\Route;
-
-Route::view('/', 'welcome')->name('home');
-
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::view('dashboard', 'dashboard')->name('dashboard');
-});
-
+use App\Http\Controllers\Admin\PortalController; use App\Models\ActivationRequest; use Illuminate\Http\Request; use Illuminate\Support\Facades\Route;
+Route::view('/','welcome')->name('home');Route::redirect('/dashboard','/admin')->middleware(['auth','admin'])->name('dashboard');Route::get('/health',fn()=>response()->json(['status'=>'ok','application'=>'Naxas License Portal','version'=>config('app.version','1.0.0')]));Route::view('/activate','activate')->name('activate');Route::post('/activate',function(Request $r){$v=$r->validate(['request_token'=>'required|max:64','domain'=>'required|max:253']);$a=ActivationRequest::where('request_token_hash',hash('sha256',$v['request_token']))->first();return view('activate',['state'=>$a?->status??'pending']);})->middleware('throttle:portal.submit');
+Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(function(){Route::get('/',[PortalController::class,'dashboard'])->name('dashboard');Route::get('/activation-requests',[PortalController::class,'requests'])->name('requests');Route::get('/activation-requests/{activationRequest}',[PortalController::class,'show'])->name('requests.show');Route::post('/activation-requests/{activationRequest}/approve',[PortalController::class,'approve'])->middleware('throttle:admin.activation.approve')->name('requests.approve');Route::post('/activation-requests/{a}/reject',[PortalController::class,'reject'])->name('requests.reject');Route::post('/activation-requests/{a}/expire',[PortalController::class,'expire'])->name('requests.expire');Route::get('/customers',[PortalController::class,'customers'])->name('customers');Route::post('/customers',[PortalController::class,'storeCustomer'])->name('customers.store');Route::get('/licenses',[PortalController::class,'licenses'])->name('licenses');Route::post('/licenses',[PortalController::class,'storeLicense'])->name('licenses.store');Route::post('/licenses/{license}/suspend',[PortalController::class,'suspend'])->name('licenses.suspend');Route::post('/licenses/{license}/revoke',[PortalController::class,'revoke'])->name('licenses.revoke');});
 require __DIR__.'/settings.php';

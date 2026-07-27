@@ -1,0 +1,2 @@
+# Local development
+Copy `.env.example` to `.env`, set `APP_ENV=local`, `APP_DEBUG=false`, a local `APP_URL`, database values and `APP_KEY`. Generate an RSA 3072+ bit private key outside the repository/public root and configure its absolute path. Run `composer install`, `npm install`, `php artisan migrate --seed`, `php artisan portal:create-admin`, `npm run build`, and `php artisan serve`. Never run `migrate:fresh` except against a disposable testing database.

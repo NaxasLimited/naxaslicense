@@ -1,0 +1,2 @@
+# Buildora API contract
+`POST /api/v1/activation-requests` accepts only `product`, `version`, `license_type`, `installation_uuid`, `domain`, `environment`, `nonce` and returns request UUID, one-time request token, pending state, ISO expiry, and trusted portal URL. `POST /api/v1/activation-requests/{request_id}/status` accepts `request_token` and `installation_uuid`, returning only the documented safe state and, while approved, `signed_license`. Cross-repository acceptance remains pending because the Buildora repository/verifier was not available in this workspace.

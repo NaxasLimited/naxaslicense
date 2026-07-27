@@ -1,0 +1,2 @@
+# Architecture
+HTTP controllers are separated into public versioned API and administrator web surfaces. Eloquent catalog, customer, license, request, activation and immutable-oriented audit records share restrictive foreign keys. Domain policy and canonical signing are centralized services. Approval uses a transaction and row locks; signed tokens are encrypted at rest using Laravel's application key.
