@@ -14,7 +14,10 @@
 | Route baseline | `/`, `/dashboard`, settings, Fortify auth; exact artisan route output unavailable before vendor install |
 | Dependency licenses | Root MIT; locked dependencies predominantly MIT/BSD/Apache/ISC; `composer licenses` initially unavailable because vendor was absent |
 | Buildora request | Seven fields: product, version, license_type, installation_uuid, domain, environment, nonce; two documented POST endpoints |
-| Buildora verifier | Cross-repository verifier unavailable. Contract supplied requires detached `base64url(canonical JSON).base64url(RSA-SHA256 signature)` |
+| Repository paths | Portal: repository root; Buildora fixture: `naxas-license-portal/`; both belong to root Git branch `work` |
+| Database / OpenSSL | MySQL client unavailable in the acceptance container; OpenSSL 3.0.13 |
+| Dependency recovery | Both Composer manifests initially had stale content hashes. Both npm locks failed `npm ci` for missing optional WASM peers. Network proxy returned HTTP 403 for Packagist/GitHub, preventing vendor installation. |
+| Buildora verifier | Implemented in the nested Buildora application using detached `base64url(payload).base64url(RSA-SHA256 signature)` and an external public key |
 | Canonicalization / RSA | Recursive bytewise object-key sort, list order retained, unescaped Unicode/slashes, exact UTF-8; RSA SHA-256/RS256 |
 | Domain | Lowercase hostname, strip URL components/default port/trailing dot; bare/www equivalent; localhost, loopback, `.test`, `.local` non-production |
 | Installation UUID | RFC-valid UUID required and proof must exactly match the stored request UUID |
@@ -33,3 +36,17 @@
 | Audit | Evidence | Admin-only future UI | safe identifiers | secret logging/deletion | allowlisted summaries, restrictive/nulling FKs | secret absence |
 | Buyer portal | Human review status | Public web | request proof | enumeration/CSRF | safe state, CSRF, throttling, no auto-approval | CSRF/info disclosure |
 | Health | Liveness | Public | none | reconnaissance | static minimal response | response schema |
+
+## Contract impact matrix
+
+| Area | Portal behavior | Buildora behavior | Mismatch found | Risk | Required correction | Regression risk | Required test |
+|---|---|---|---|---|---|---|---|
+| Transport | API previously accepted HTTP everywhere | No request client existed | No environment/host boundary | Remote plaintext proof disclosure | Explicit local/testing opt-in plus trusted host allowlist on both sides | Local setup failure | HTTP policy tests |
+| Create request | Returned the five documented fields | No client or secure proof store existed | End-to-end generation absent | Activation impossible/token leakage | Strict client schema and encrypted model casts | Existing CMS settings | Creation/UI test |
+| Status/delivery | Changed approved to completed while forming first response | No poller existed | Interrupted response permanently lost entitlement | Buyer cannot activate | Repeat identical approved token until acknowledgement | Longer token retention | Interrupted response/retry test |
+| Acknowledgement | Endpoint absent | Endpoint absent | No evidence of local verification/persistence | False completion | Proof + UUID + SHA-256 token fingerprint, transactional/idempotent completion | State transition race | Wrong and repeated acknowledgement tests |
+| Signature | RSA/SHA-256 detached envelope | Verifier absent | No local trust decision | Forged/wrong-site activation | Exact-byte RSA verification; product/type/UUID/domain/expiry binding | Key deployment error | Tamper/wrong key/domain tests |
+| Domain | Stored hostname; canonicalized `www` for entitlement | No normalization | Potential `www` disagreement | Valid buyer rejected | Equivalent lowercase/trimmed hostname rules | Edge-case IDNs | Domain binding tests |
+| Installation | UUID proof checked at status | No persistent UUID | Requests could drift between installs | License replay | Unique persistent installation UUID | Existing installs need initialization | Wrong UUID test |
+| Secrets/logging | Request token hashed and entitlement encrypted | No persistence policy | Client proof handling undefined | Credentials in database/logs | Encrypted casts and safe fixed messages; no secret logging | APP_KEY rotation | Storage/log redaction test |
+| UI | Admin approval existed | License UI absent | No operator workflow | Cannot accept locally | Responsive authenticated state UI and double-submit controls | Theme integration | Desktop/mobile acceptance |
