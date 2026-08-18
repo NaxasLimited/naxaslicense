@@ -6,7 +6,7 @@ steps:
     image: php:8.4-cli-bookworm
     commands:
       - apt-get update
-      - apt-get install -y --no-install-recommends git libicu-dev libzip-dev unzip
+      - apt-get install -y --no-install-recommends git libicu-dev libsqlite3-dev libzip-dev unzip
       - docker-php-ext-install -j"$(nproc)" intl pdo_sqlite zip
       - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
       - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
