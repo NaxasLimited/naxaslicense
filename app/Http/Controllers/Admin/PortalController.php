@@ -147,7 +147,13 @@ class PortalController extends Controller
             $used = $l->activations->where('status', 'active')->filter(fn ($x) => ! $domains->isNonProduction($x->normalized_domain))->map(fn ($x) => $domains->canonical($x->normalized_domain))->unique();
             if ($production && ! $used->contains($production) && $used->count() >= $l->production_domain_limit) {
                 throw ValidationException::withMessages(['license_id' => 'Production domain capacity exceeded.']);
-            }$activation = LicenseActivation::firstOrCreate(['activation_request_id' => $a->id], ['license_id' => $l->id, 'installation_uuid' => $a->installation_uuid, 'normalized_domain' => $a->normalized_domain, 'domain_hash' => hash('sha256', $canonical), 'environment' => $a->environment, 'status' => 'active', 'activated_at' => now()]);
+            }
+
+            if ($l->issued_at === null) {
+                $l->forceFill(['issued_at' => now()])->save();
+            }
+
+            $activation = LicenseActivation::firstOrCreate(['activation_request_id' => $a->id], ['license_id' => $l->id, 'installation_uuid' => $a->installation_uuid, 'normalized_domain' => $a->normalized_domain, 'domain_hash' => hash('sha256', $canonical), 'environment' => $a->environment, 'status' => 'active', 'activated_at' => now()]);
             $payload = [
                 'schema_version' => 1,
                 'key_id' => config('license.key_id'),

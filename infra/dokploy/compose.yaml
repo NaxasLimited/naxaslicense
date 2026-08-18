@@ -1,0 +1,150 @@
+x-app-environment: &app-environment
+  APP_NAME: "Naxas License Portal"
+  APP_ENV: production
+  APP_DEBUG: "false"
+  APP_URL: https://license.naxas.ai
+  APP_KEY: ${APP_KEY:?APP_KEY is required}
+  APP_LOCALE: en
+  APP_FALLBACK_LOCALE: en
+  LOG_CHANNEL: stderr
+  LOG_LEVEL: warning
+  DB_CONNECTION: mariadb
+  DB_HOST: database
+  DB_PORT: 3306
+  DB_DATABASE: ${DB_DATABASE:-naxas_license}
+  DB_USERNAME: ${DB_USERNAME:-naxas_license}
+  DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+  REDIS_CLIENT: phpredis
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+  CACHE_STORE: redis
+  QUEUE_CONNECTION: redis
+  SESSION_DRIVER: redis
+  SESSION_ENCRYPT: "true"
+  SESSION_SECURE_COOKIE: "true"
+  SESSION_SAME_SITE: lax
+  SESSION_DOMAIN: license.naxas.ai
+  MAIL_MAILER: ${MAIL_MAILER:-log}
+  MAIL_HOST: ${MAIL_HOST:-127.0.0.1}
+  MAIL_PORT: ${MAIL_PORT:-2525}
+  MAIL_USERNAME: ${MAIL_USERNAME:-}
+  MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+  MAIL_ENCRYPTION: ${MAIL_ENCRYPTION:-}
+  MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-license@naxas.ai}
+  MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Naxas License Portal}
+  LICENSE_ISSUER: "Naxas Inventions Limited"
+  LICENSE_SIGNING_PRIVATE_KEY_PATH: /run/secrets/naxas-license/buildora-private.pem
+  LICENSE_SIGNING_KEY_ID: buildora-production-1
+  LICENSE_REQUEST_TTL_MINUTES: ${LICENSE_REQUEST_TTL_MINUTES:-1440}
+  LICENSE_CREATE_RATE_LIMIT: ${LICENSE_CREATE_RATE_LIMIT:-5}
+  LICENSE_STATUS_RATE_LIMIT: ${LICENSE_STATUS_RATE_LIMIT:-20}
+  LICENSE_ALLOW_LOCAL_HTTP: "false"
+
+services:
+  database:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_DATABASE:-naxas_license}
+      MARIADB_USER: ${DB_USERNAME:-naxas_license}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-name-resolve
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    volumes:
+      - license_database:/var/lib/mysql
+    networks: [license_private]
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    volumes:
+      - license_redis:/data
+    networks: [license_private]
+
+  key-init:
+    build:
+      context: ../..
+      dockerfile: infra/dokploy/Dockerfile
+    restart: "no"
+    command: ["key-init"]
+    volumes:
+      - license_signing_keys:/run/secrets/naxas-license
+    networks: [license_private]
+
+  app:
+    build:
+      context: ../..
+      dockerfile: infra/dokploy/Dockerfile
+    restart: unless-stopped
+    environment: *app-environment
+    depends_on:
+      database: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      key-init: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "naxas-license-healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    volumes:
+      - license_storage:/var/www/html/storage
+      - license_signing_keys:/run/secrets/naxas-license:ro
+    networks: [license_private, dokploy-network]
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: infra/dokploy/Dockerfile
+    restart: unless-stopped
+    command: ["worker"]
+    environment: *app-environment
+    depends_on:
+      app: { condition: service_healthy }
+    volumes:
+      - license_storage:/var/www/html/storage
+    networks: [license_private, dokploy-network]
+
+  scheduler:
+    build:
+      context: ../..
+      dockerfile: infra/dokploy/Dockerfile
+    restart: unless-stopped
+    command: ["scheduler"]
+    environment: *app-environment
+    depends_on:
+      app: { condition: service_healthy }
+    volumes:
+      - license_storage:/var/www/html/storage
+    networks: [license_private]
+
+networks:
+  license_private:
+    internal: true
+  dokploy-network:
+    external: true
+
+volumes:
+  license_database:
+  license_redis:
+  license_signing_keys:
+  license_storage:

@@ -52,7 +52,7 @@ return new class extends Migration
             $t->boolean('update_entitlement');
             $t->boolean('support_entitlement');
             $t->dateTime('support_expires_at')->nullable();
-            $t->dateTime('issued_at');
+            $t->dateTime('issued_at')->nullable();
             $t->dateTime('expires_at')->nullable();
             $t->dateTime('suspended_at')->nullable();
             $t->dateTime('revoked_at')->nullable();

@@ -19,6 +19,7 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="APP_KEY" value="base64:1H8aYoP1TWu7T0R8N9v9T5tYd1oY/CoFxm0GxP2vRao="/>
         <env name="LICENSE_ALLOW_LOCAL_HTTP" value="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

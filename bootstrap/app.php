@@ -15,6 +15,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Only the private Docker/Traefik path is trusted to supply forwarded
+        // client and HTTPS headers. Public clients cannot directly reach the
+        // container port.
+        $middleware->trustProxies(
+            at: ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'],
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO
+                | Request::HEADER_X_FORWARDED_PREFIX,
+        );
+
         $middleware->alias([
             'admin' => EnsureAdmin::class,
             'activation.transport' => RequireSecureActivationTransport::class,

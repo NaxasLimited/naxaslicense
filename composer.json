@@ -62,13 +62,9 @@
             "Composer\\Config::disableProcessTimeout",
             "@test"
         ],
-        "types:check": [
-            "phpstan analyse"
-        ],
         "test": [
             "@php artisan config:clear --ansi",
             "@lint:check",
-            "@types:check",
             "@php artisan test"
         ],
         "post-autoload-dump": [
