@@ -34,10 +34,10 @@ and an isolated backup restoration before treating a release as complete.
 The repository is connected to the self-hosted Woodpecker service at
 `https://ci.naxaslimited.com`. Pull requests, pushes, and manually started
 pipelines run the PHP test suite and production asset build. Only a successful
-push to `master` can use the repository-scoped `dokploy_deploy_webhook` secret
-to request a production deployment.
+push to `master` can use the repository-scoped, forced-command SSH identity to
+request a production deployment.
 
 Dokploy's direct GitHub auto-deploy must remain disabled for this service. This
-ensures a push cannot bypass the CI quality gate. The webhook is a scoped
-deployment trigger, not a general Dokploy API credential, and must remain in
-Woodpecker's secret store.
+ensures a push cannot bypass the CI quality gate. The SSH identity can run only
+the license-portal deployment command; it cannot open a shell or deploy another
+product.

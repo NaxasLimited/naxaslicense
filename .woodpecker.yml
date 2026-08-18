@@ -22,13 +22,23 @@ steps:
       - npm run build
 
   deploy-production:
-    image: curlimages/curl:8.12.1
+    image: alpine:3.21
     environment:
-      DOKPLOY_DEPLOY_WEBHOOK:
-        from_secret: dokploy_deploy_webhook
+      NAXAS_DEPLOY_HOST:
+        from_secret: naxas_deploy_host
+      NAXAS_DEPLOY_USER:
+        from_secret: naxas_deploy_user
+      NAXAS_DEPLOY_SSH_KEY:
+        from_secret: naxas_deploy_ssh_key
+      NAXAS_DEPLOY_KNOWN_HOSTS:
+        from_secret: naxas_deploy_known_hosts
     commands:
-      - test -n "$${DOKPLOY_DEPLOY_WEBHOOK}"
-      - curl --fail --silent --show-error --retry 3 --retry-all-errors --max-time 30 -X POST "$${DOKPLOY_DEPLOY_WEBHOOK}"
+      - apk add --no-cache openssh-client
+      - install -d -m 0700 "$${HOME}/.ssh"
+      - printf '%s\n' "$${NAXAS_DEPLOY_SSH_KEY}" > "$${HOME}/.ssh/id_ed25519"
+      - printf '%s\n' "$${NAXAS_DEPLOY_KNOWN_HOSTS}" > "$${HOME}/.ssh/known_hosts"
+      - chmod 0600 "$${HOME}/.ssh/id_ed25519" "$${HOME}/.ssh/known_hosts"
+      - ssh -i "$${HOME}/.ssh/id_ed25519" -o IdentitiesOnly=yes "$${NAXAS_DEPLOY_USER}@$${NAXAS_DEPLOY_HOST}" "deploy $${CI_COMMIT_SHA}"
     when:
       - event: push
         branch: master
