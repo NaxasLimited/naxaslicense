@@ -2,6 +2,12 @@ when:
   - event: [push, pull_request, manual]
 
 steps:
+  build-assets:
+    image: node:22-bookworm-slim
+    commands:
+      - npm ci --no-audit --no-fund
+      - npm run build
+
   quality-and-tests:
     image: php:8.4-cli-bookworm
     commands:
@@ -14,12 +20,6 @@ steps:
       - composer install --no-interaction --prefer-dist
       - cp .env.example .env
       - composer test
-
-  build-assets:
-    image: node:22-bookworm-slim
-    commands:
-      - npm ci --no-audit --no-fund
-      - npm run build
 
   deploy-production:
     image: alpine:3.21
