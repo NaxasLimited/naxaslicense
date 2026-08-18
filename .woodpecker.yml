@@ -20,3 +20,15 @@ steps:
     commands:
       - npm ci --no-audit --no-fund
       - npm run build
+
+  deploy-production:
+    image: curlimages/curl:8.12.1
+    environment:
+      DOKPLOY_DEPLOY_WEBHOOK:
+        from_secret: dokploy_deploy_webhook
+    commands:
+      - test -n "$${DOKPLOY_DEPLOY_WEBHOOK}"
+      - curl --fail --silent --show-error --retry 3 --retry-all-errors --max-time 30 -X POST "$${DOKPLOY_DEPLOY_WEBHOOK}"
+    when:
+      - event: push
+        branch: master
