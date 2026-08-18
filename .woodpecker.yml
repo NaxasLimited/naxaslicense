@@ -2,6 +2,11 @@ when:
   - event: [push, pull_request, manual]
 
 steps:
+  php-dependencies:
+    image: composer:2.8
+    commands:
+      - composer install --no-interaction --prefer-dist
+
   build-assets:
     image: node:22-bookworm-slim
     commands:
@@ -17,7 +22,7 @@ steps:
       - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
       - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
       - rm composer-setup.php
-      - composer install --no-interaction --prefer-dist
+      - composer validate --strict
       - cp .env.example .env
       - composer test
 
